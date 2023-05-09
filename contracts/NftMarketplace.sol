@@ -11,6 +11,8 @@ error NftMarketplace_AlreadyListed(address NFTAddress, uint256 tokenId);
 error NftMarketplace_IsNotOwner();
 error NftMarketplace_NotListed(address NFTaddress, uint256 tokenId);
 error NftMarketplace_PriceNotMet(address NFTaddress, uint256 tokenId, uint256 price);
+error NftMarketplace_NoProceedToWithdraw();
+error NftMarketplace_TransferFaied();
 
 contract NftMarketplace is ReentrancyGuard{
 struct Listing  {
@@ -19,6 +21,7 @@ struct Listing  {
 } 
 event ItemListed(address indexed seller, address indexed NFTAddress, uint256 tokenId, uint256 price);
 event ItemBought(address indexed buyer, address indexed NFTAddress, uint256 tokenId, uint256 price);
+event ItemCanceled(address indexed seller, address indexed NFTAddress, uint256 tokenId);
 
 //NFT contract address => tokenId => Listing
 mapping(address => mapping(uint256 => Listing)) private s_Listing;
@@ -76,6 +79,29 @@ function buyItem(address NFTaddress, uint256 tokenId) external payable IsListed(
     delete (s_Listing[NFTaddress][tokenId]);
     IERC721(NFTaddress).safeTransferFrom(nftListed.seller, msg.sender, tokenId);
     emit ItemBought(msg.sender, NFTaddress, tokenId, nftListed.price);
+}
+
+function cancelListing(address NFTaddress, uint256 tokenId) external IsListed(NFTaddress, tokenId) IsOwner(NFTaddress, tokenId, msg.sender){
+    delete(s_Listing[NFTaddress][tokenId]);
+    emit ItemCanceled(msg.sender, NFTaddress, tokenId);
+}
+
+function updateListing(address NFTaddress, uint256 tokenId, uint256 newItemPrice) external IsListed(NFTaddress, tokenId) IsOwner(NFTaddress, tokenId, msg.sender) {
+    s_Listing[NFTaddress][tokenId].price = newItemPrice;
+    emit ItemListed(msg.sender, NFTaddress, tokenId, newItemPrice);
+}
+
+function withdrawProceeds() external {
+    uint256 proceeds = s_Proceeds[msg.sender];
+    if (proceeds <= 0) {
+        revert NftMarketplace_NoProceedToWithdraw();
+    }
+    s_Proceeds[msg.sender] = 0;
+    (bool sucess,) = payable (msg.sender).call{value: proceeds}("");
+    if (!sucess) {
+        revert NftMarketplace_TransferFaied();     
+    }
+
 }
 
 }
