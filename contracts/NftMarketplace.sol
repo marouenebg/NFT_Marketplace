@@ -104,4 +104,12 @@ function withdrawProceeds() external {
 
 }
 
+function getLitings(address NFTaddress, uint256 tokenId) external view returns (Listing memory) {
+    return s_Listing [NFTaddress][tokenId];
+}
+
+function getProceeds(address seller) external view returns(uint256) {
+    return s_Proceeds[seller];
+}
+
 }
