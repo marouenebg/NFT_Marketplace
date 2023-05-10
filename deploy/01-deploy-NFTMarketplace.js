@@ -6,7 +6,7 @@ module.exports = async ({getNamedAccounts, deployments}) => {
     const {deploy, log} = deployments
     const {deployer} = await getNamedAccounts()
 
-    //args are empty because we don't have a constructor
+    //args are empty because we don't have a constructor and or the instructor is empty
     let args = []
 
     const NftMarketplace = await deploy("NftMarketplace", {
